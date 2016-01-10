@@ -26,3 +26,14 @@
 *.exe
 *.out
 *.app
+
+# Other mess
+.idea/*
+*~
+
+# Cmake files
+*.cmake
+Makefile
+CMakeFiles/*
+CMakeCache*
+ptest
