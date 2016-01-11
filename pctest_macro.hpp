@@ -35,6 +35,10 @@
 #define run_test(...) VFUNC(run_test, __VA_ARGS__)
 
 // run_test definitions
+#define run_test3(func,expected_result,equality)\
+{\
+ptest::_run_test(func,#func,expected_result,equality,{});\
+}
 #define run_test4(func,x0,expected_result,equality)\
 {\
 ptest::_run_test(func,#func,expected_result,equality,{#x0},x0);\
