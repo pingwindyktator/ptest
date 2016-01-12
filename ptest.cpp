@@ -52,17 +52,20 @@ namespace ptest {
             size_t pos) { }
 
     void ptest_suite::print_suite_result () {
+      print_thread_safe(std::cout, "----- RESULT IN SUITE ", suite_name,  ":\n");
       print_thread_safe(std::cout, "tests passed: ", local_suite_stats.passed, '\n');
       print_thread_safe(std::cout, "tests failed: ", local_suite_stats.failed, '\n');
       print_thread_safe(std::cout, "timeout: ", local_suite_stats.timeout, '\n');
-      print_thread_safe(std::cout, "total execution time: ", local_suite_stats.total_time.count(), "ms");
+      print_thread_safe(std::cout, "total execution time: ", local_suite_stats.total_time.count(), "ms\n");
+      print_thread_safe(std::cout, "---------------------\n");
     }
 
     void ptest_suite::print_general_result () {
+      print_thread_safe(std::cout, "----- FINAL RESULT:\n");
       print_thread_safe(std::cout, "tests passed: ", general_stats.passed, '\n');
       print_thread_safe(std::cout, "tests failed: ", general_stats.failed, '\n');
       print_thread_safe(std::cout, "timeout: ", general_stats.timeout, '\n');
-      print_thread_safe(std::cout, "total execution time: ", general_stats.total_time.count(), "ms");
+      print_thread_safe(std::cout, "total execution time: ", general_stats.total_time.count(), "ms\n");
     }
 
     void ptest_suite::update_stats (const ptest_suite::function_status &status,
@@ -87,5 +90,5 @@ namespace ptest {
       }
     }
 
-    ptest_suite general("general");
+    ptest_suite general("");
 }

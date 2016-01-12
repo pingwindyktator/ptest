@@ -49,7 +49,6 @@ namespace ptest {
         stats local_suite_stats;
         static stats general_stats;
         config local_config;
-        std::string suite_name;
 
         ptest_suite (const std::string &suite_name, const config &local_config = config());
 
@@ -136,6 +135,8 @@ namespace ptest {
             timeout = 2
         };
 
+        std::string suite_name;
+
         template <typename First>
         static void inner_print_thread_safe (std::ostream &out, const First &value) {
           out << value;
@@ -149,7 +150,7 @@ namespace ptest {
 
         static void terminate_main_thread ();
 
-        virtual void update_stats (const function_status &,
+        void update_stats (const function_status &,
                 const std::chrono::milliseconds & = std::chrono::milliseconds::zero());
 
         template <typename T>
@@ -208,7 +209,11 @@ namespace ptest {
                 const std::vector<const char *> &args_names,
                 const Args &... args) {
 
-          print_thread_safe(out, "running test ", func_name, "(");
+          if (suite_name == "") {
+            print_thread_safe(out, "running test ", func_name, "(");
+          } else {
+            print_thread_safe(out, suite_name, ": running test ", func_name, "(");
+          }
           print_args(out, args_names, 0, args...);
           print_thread_safe(out, ")");
         }
@@ -249,4 +254,8 @@ namespace ptest {
 
 #include "ptest_simple_test_macro.hpp"
 #include "ptest_suite_test_macro.hpp"
+
+#define print_final_result() {\
+ptest::ptest_suite::print_general_result();\
+}
 #endif //TESTING_PCTEST_HPP
