@@ -24,18 +24,16 @@ int main () {
   int b = 4;
   vector<int> vec {1, 2, 3};
   int aa = 99;
-  ptest::configuration.use_cerr_to_error = false;
-  ptest::configuration.set_max_time(std::chrono::milliseconds(50));
-  run_test(func4, b, 4, 0);
-  run_test(func5, 44, 1);
-  run_test(func2, 5, vec, 5, 0);
-  run_test(func, 1, 1, "ehe xd\"", 3.14, '\'', 2, 0);
-  run_test(func3, "ala ee", "ala a", "ala b", 'a', 'b', "al\"}", "al\"}", "al\"}", '\"', '\"', 44, 1);
-  run_test([] (int) -> int { return 99; }, 98, aa, 1);
-//  for (int i = 0; i < 100; ++i) {
-//    for (int j = 0; j < 100; ++j)
-//      run_test(test1, i, j, (i*j), 1);
-//  }
-  print_final_result();
+  run_simple_test(func4, b, 4, 0);
+  run_simple_test(func5, 44, 1);
+  run_simple_test(func2, 5, vec, 5, 0);
+  run_simple_test(func, 1, 1, "ehe xd\"", 3.14, '\'', 2, 0);
+  run_simple_test(func3, "ala ee", "ala a", "ala b", 'a', 'b', "al\"}", "al\"}", "al\"}", '\"', '\"', 44, 1);
+  run_simple_test([] (int) -> int { return 99; }, 98, aa, 1);
+  for (int i = 0; i < 100; ++i) {
+    for (int j = 0; j < 100; ++j)
+    run_simple_test(test1, i, j, (i*j), 1);
+  }
+
   return 0;
 }

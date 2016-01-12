@@ -3,5 +3,5 @@ project(ptest)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
-set(SOURCE_FILES demo.cpp ptest.cpp ptest.hpp pctest_macro.hpp ./prettyprint/pretty_print.hpp)
+set(SOURCE_FILES demo.cpp ptest.cpp ptest.hpp ptest_suite_test_macro.hpp ./prettyprint/pretty_print.hpp ptest_simple_test_macro.hpp)
 add_executable(ptest ${SOURCE_FILES})
