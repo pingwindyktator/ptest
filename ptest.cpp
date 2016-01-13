@@ -8,15 +8,15 @@ namespace ptest {
     ptest_suite::ptest_suite (const std::string &suite_name,
             const config &local_config) : suite_name(suite_name) { }
 
-    void ptest_suite::print_value (std::ostream &out, const char *value) {
+    void ptest_suite::print_value (std::ostream &out, const char *value) const {
       print_thread_safe(out, "\"", value, "\"");
     }
 
-    void ptest_suite::print_value (std::ostream &out, const char value) {
+    void ptest_suite::print_value (std::ostream &out, const char value) const {
       print_thread_safe(out, "\'", value, "\'");
     }
 
-    void ptest_suite::print_name_and_value (std::ostream &out, const char *name, const char *value) {
+    void ptest_suite::print_name_and_value (std::ostream &out, const char *name, const char *value) const {
       std::string s_name(name + 1), s_value(value);
       s_value += "\"";
       s_name.erase(std::remove(s_name.begin(), s_name.end(), '\\'), s_name.end());
@@ -29,7 +29,7 @@ namespace ptest {
       }
     }
 
-    void ptest_suite::print_name_and_value (std::ostream &out, const char *name, const char value) {
+    void ptest_suite::print_name_and_value (std::ostream &out, const char *name, const char value) const {
       std::string s_name(name + 1), s_value(1, value);
       s_value += "\'";
       s_name.erase(std::remove(s_name.begin(), s_name.end(), '\\'), s_name.end());
@@ -49,9 +49,9 @@ namespace ptest {
 
     void ptest_suite::print_args (std::ostream &out,
             const std::vector<const char *> args_names,
-            size_t pos) { }
+            size_t pos) const { }
 
-    void ptest_suite::print_suite_result () {
+    void ptest_suite::print_suite_result () const {
       print_thread_safe(std::cout, "----- RESULT IN SUITE ", suite_name,  ":\n");
       print_thread_safe(std::cout, "tests passed: ", local_suite_stats.passed, '\n');
       print_thread_safe(std::cout, "tests failed: ", local_suite_stats.failed, '\n');
@@ -69,7 +69,7 @@ namespace ptest {
     }
 
     void ptest_suite::update_stats (const ptest_suite::function_status &status,
-            const std::chrono::milliseconds &execution_time) {
+            const std::chrono::milliseconds &execution_time) const {
       switch (status) {
         case function_status::passed:
           ++general_stats.passed;
