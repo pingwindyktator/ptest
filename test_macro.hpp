@@ -2,6 +2,9 @@
 #define PLIB_PTEST_TEST_MACRO_HPP
 #include "general_macro_overloading.hpp"
 
+#define pequal true
+#define punequal false
+
 #define run_test(...) VFUNC(run_simple_test, __VA_ARGS__)
 
 #define run_simple_test3(func,expected_result,equality)\

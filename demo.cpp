@@ -34,17 +34,12 @@ void power_modulo_test (size_t size) {
     run_suite_assert(power_modulo_suite, a >= 0);
     run_suite_assert(power_modulo_suite, b >= 0);
     run_suite_assert(power_modulo_suite, mod >= 0);
-    run_suite_test(power_modulo_suite, pmath::power_modulo<decltype(a)>, a, b, mod, powm(a, b, mod), 1);
+    run_suite_test(power_modulo_suite, pmath::power_modulo<decltype(a)>, a, b, mod, powm(a, b, mod), pequal);
   }
 }
 
 void prandom_in_range_test (size_t size, size_t mod = 10) {
   long_type a, b, result;
-
-  ptest::general_suite.config.print_passed_tests = false;
-  ptest::general_suite.config.set_max_time(chrono::seconds(1));
-  ptest::general_suite.config.use_cerr_to_error = false;
-
   for (size_t i = 1; i <= size; ++i) {
     a = prandom::get_random<decltype(a)>(size % mod);
     b = prandom::get_posivite_random<decltype(b)>(size % mod) + 1;
@@ -65,15 +60,9 @@ void prandom_in_range_test (size_t size, size_t mod = 10) {
 
 void prandom_uniformly_dist_test (size_t size, size_t max = 1000) {
   size_t result;
-
   size_t *occ = new size_t[max] {};
 
-  ptest::general_suite.config.print_passed_tests = false;
-  ptest::general_suite.config.set_max_time(chrono::seconds(1));
-  ptest::general_suite.config.use_cerr_to_error = false;
-
   for (size_t i = 1; i <= size; ++i) {
-
     result = prandom::get_random_in_range<decltype(result)>(0, max);
     if (run_assert(result >= 0) == pfailed) {
       pdebug(result);
@@ -112,7 +101,7 @@ void is_coprime_test (int size, const long_type &max) {
     } catch (const std::bad_alloc &exc) {
     }
     for (auto &c : cop) {
-      run_suite_test(is_coprime_suite, pmath::gcd<long_type>, c, random, 1, 1);
+      run_suite_test(is_coprime_suite, pmath::gcd<long_type>, c, random, 1, pequal);
     }
   }
 }
@@ -127,7 +116,7 @@ bool get_mult_inverse_test (int size) {
 
   for (int i = 0; i < size; ++i) {
     checked = prandom::get_random_in_range<int>(0, max);
-    run_suite_test(get_mult_inverse_suite, checker, checked, 1, 1);
+    run_suite_test(get_mult_inverse_suite, checker, checked, 1, pequal);
   }
   return false;
 }
@@ -145,6 +134,8 @@ int main () {
   prandom_in_range_suite.config = my_conf;
   power_modulo_suite.config = my_conf;
   get_mult_inverse_suite.config = my_conf;
+  ptest::general_suite.config = my_conf;
+
   get_mult_inverse_suite.config.print_exceptions = false;
 
   try {
