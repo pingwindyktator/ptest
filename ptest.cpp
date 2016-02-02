@@ -46,6 +46,7 @@ namespace ptest {
       }
     }
 
+
     void ptest_suite::terminate_process () {
       std::cout << "\nterminating... ";
       std::cout.flush();
@@ -53,9 +54,6 @@ namespace ptest {
       exit(0);
     }
 
-    void ptest_suite::print_args (std::ostream &out,
-            const std::vector<std::string> args_names,
-            size_t pos) const { }
 
     void ptest_suite::print_suite_result () const {
       print_thread_safe(std::cout, "----- TEST RESULT IN SUITE ", suite_name, ":\n");
