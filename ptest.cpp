@@ -19,6 +19,8 @@ namespace ptest {
       print_thread_safe(out, "\'", value, "\'");
     }
 
+    void ptest_suite::print_args (std::ostream &out, const std::vector<std::string> args_names, size_t pos) const { }
+
     void ptest_suite::print_name_and_value (std::ostream &out,
             const std::string &name,
             const std::string &value) const {

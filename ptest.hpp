@@ -284,6 +284,10 @@ namespace ptest {
           print_name_and_value(out, args_names.at(pos), first);
         }
 
+        void print_args (std::ostream &out,
+                const std::vector<std::string> args_names,
+                size_t pos) const;
+
         template <typename First, typename ... Rest>
         void print_args (std::ostream &out,
                 const std::vector<std::string> args_names,
