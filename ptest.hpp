@@ -114,6 +114,16 @@ namespace ptest {
               terminate_process();
 
             return;
+          } catch (...) {
+            if (config.print_exceptions) {
+              print_test_preamble(error_output, func_name, args_names, args ...);
+              print_thread_safe(error_output, "\n\tEXCEPTION CAUGTH", "\n\n");
+            }
+            update_stats(function_status::exception);
+            if (config.terminate_after_first_exception)
+              terminate_process();
+
+            return;
           }
 
           bool is_ok = (result.result == expected_result);
