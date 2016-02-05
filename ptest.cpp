@@ -5,10 +5,6 @@
 namespace ptest {
     stats_t ptest_suite::general_stats;
 
-    bool print_to_file = false;
-
-    std::string output_filename;
-
     ptest_suite::ptest_suite (const std::string &suite_name,
             const config_t &local_config) : config(local_config), suite_name(suite_name) { }
 
@@ -68,11 +64,6 @@ namespace ptest {
           ++general_stats.exceptions;
           ++stats.exceptions;
       }
-    }
-
-    void set_output_file (const std::string &filename) {
-      output_filename = filename;
-      print_to_file = true;
     }
 
     // =========================================================================
