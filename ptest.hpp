@@ -10,63 +10,14 @@
 #include <mutex>
 #include <atomic>
 #include <list>
+#include <fstream>
+#include <unordered_map>
 #include "prettyprint/pretty_print.hpp"
-
+#include "stats.hpp"
+#include "config.hpp"
+#include "additionals.hpp"
 
 namespace ptest {
-    struct stats_t {
-        std::atomic<size_t> passed;
-        std::atomic<size_t> failed;
-        std::atomic<size_t> timeout;
-        std::atomic<size_t> exceptions;
-        std::atomic<std::chrono::microseconds> total_time;
-    };
-
-    struct config_t {
-        std::chrono::microseconds max_time;
-        bool is_timeout_active = false;
-        bool use_cerr_to_error = false;
-        bool print_passed_tests = false;
-        bool print_exceptions = true;
-        bool print_names_of_arguments = true;
-        bool terminate_after_first_failure = false;
-        bool terminate_after_first_exception = false;
-        bool terminate_after_first_timeout = false;
-
-        template <class Rep, class Period = std::ratio<1>>
-        void set_max_time (const std::chrono::duration<Rep, Period> &max) {
-          if (max > std::chrono::milliseconds::max() - std::chrono::milliseconds(15)) {
-            throw std::logic_error("invalid max_time set");
-          }
-          max_time = max;
-          is_timeout_active = true;
-        }
-    };
-
-    class timeout_exception : public std::exception {
-        virtual const char *what () const throw() {
-          return "Timeout reached";
-        }
-    };
-
-    template <typename func_t, typename ... Args>
-    std::chrono::microseconds measure_execution_time (func_t &&func, Args &&... args) {
-      auto start = std::chrono::high_resolution_clock::now();
-      func(std::forward<Args>(args)...);
-      auto end = std::chrono::high_resolution_clock::now();
-      return std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    }
-
-    template <typename func_t, typename ... Args>
-    void call_test (size_t threads_number, func_t &&func, Args &&... args) {
-      std::list <std::thread> threads;
-      for (size_t i = 0; i < threads_number; ++i)
-        threads.emplace_back(std::thread(func, std::forward<Args>(args)...));
-
-      for (auto &t : threads)
-        t.join();
-    }
-
     class ptest_suite {
     public:
         mutable stats_t stats;
@@ -85,20 +36,18 @@ namespace ptest {
                 std::vector<std::string> &&args_names,
                 Args &&... args) const {
 
-          using return_type = typename std::result_of<func_t(Args...)>::type;
+          using return_type = typename std::result_of<func_t (Args...)>::type;
           // VOODOO MAGIC, DO NOT TOUCH
           static const std::string voodoo[2][5] = {{"  ", "\n", "!(", ")\n", "  "},
                                                    {"",   "\n", "",   "\n",  ""}};
 
-          std::ostream &error_output = (config.use_cerr_to_error ? std::cerr : std::cout);
-
-          function_result<return_type> result;
+          function_result <return_type> result;
 
           try {
             result = run_function(config.is_timeout_active, function, std::forward<Args>(args)...);
           } catch (const timeout_exception &ex) {
-            print_test_preamble(error_output, func_name, args_names, args ...);
-            print_thread_safe(error_output, "\n\tTIMEOUT\n\n");
+            print_test_preamble(output_type::timeout , func_name, args_names, std::forward<Args>(args) ...);
+            print_thread_safe(output_type::timeout, "\n\tTIMEOUT\n\n");
             update_stats(function_status::timeout);
             if (config.terminate_after_first_timeout)
               terminate_process();
@@ -106,8 +55,8 @@ namespace ptest {
             return;
           } catch (const std::exception &exc) {
             if (config.print_exceptions) {
-              print_test_preamble(error_output, func_name, args_names, args ...);
-              print_thread_safe(error_output, "\n\tEXCEPTION CAUGTH: ", exc.what(), "\n\n");
+              print_test_preamble(output_type::exception , func_name, args_names, std::forward<Args>(args)...);
+              print_thread_safe(output_type::exception, "\n\tEXCEPTION CAUGTH: ", exc.what(), "\n\n");
             }
             update_stats(function_status::exception);
             if (config.terminate_after_first_exception)
@@ -116,8 +65,8 @@ namespace ptest {
             return;
           } catch (...) {
             if (config.print_exceptions) {
-              print_test_preamble(error_output, func_name, args_names, args ...);
-              print_thread_safe(error_output, "\n\tEXCEPTION CAUGTH", "\n\n");
+              print_test_preamble(output_type::exception, func_name, args_names, args ...);
+              print_thread_safe(output_type::exception, "\n\tEXCEPTION CAUGTH", "\n\n");
             }
             update_stats(function_status::exception);
             if (config.terminate_after_first_exception)
@@ -133,15 +82,15 @@ namespace ptest {
           if (is_ok) {
             update_stats(function_status::passed, result.execution_time);
             if (config.print_passed_tests) {
-              print_test_preamble(std::cout, func_name, args_names, args...);
-              print_thread_safe(std::cout, "\n\tPASSED in ", result.execution_time.count(), " microseconds\n\n");
+              print_test_preamble(output_type::passed , func_name, args_names, args...);
+              print_thread_safe(output_type::passed, "\n\tPASSED in ", result.execution_time.count(), " microseconds\n\n");
             }
           } else {
             update_stats(function_status::failed, result.execution_time);
-            print_test_preamble(error_output, func_name, args_names, args ...);
-            print_thread_safe(std::cout, "\n\tFAILED in        ", voodoo[equality][4], result.execution_time.count(), " microseconds\n");
-            print_thread_safe(error_output, "\tresult was       ", voodoo[equality][0], result.result, voodoo[equality][1]);
-            print_thread_safe(error_output, "\texpecting result ", voodoo[equality][2], expected_result, voodoo[equality][3], '\n');
+            print_test_preamble(output_type::failed , func_name, args_names, args ...);
+            print_thread_safe(output_type::failed, "\n\tFAILED in        ", voodoo[equality][4], result.execution_time.count(), " microseconds\n");
+            print_thread_safe(output_type::failed, "\tresult was       ", voodoo[equality][0], result.result, voodoo[equality][1]);
+            print_thread_safe(output_type::failed, "\texpecting result ", voodoo[equality][2], expected_result, voodoo[equality][3], '\n');
             if (config.terminate_after_first_failure)
               terminate_process();
           }
@@ -151,20 +100,9 @@ namespace ptest {
 
         // =========================================================================
 
-        void clear_stats();
-
-        // =========================================================================
-
         void print_suite_result () const;
 
-        static void print_general_result ();
-
-        template <typename ... Args>
-        static void print_thread_safe (std::ostream &out, Args &&... args) {
-          static std::mutex mtx;
-          std::lock_guard<std::mutex> lock(mtx);
-          _print_thread_safe(out, std::forward<Args>(args)...);
-        }
+        void print_general_result () const;
 
     private:
         template <typename T>
@@ -186,16 +124,16 @@ namespace ptest {
 
         template <typename func_t, typename ... Args>
         auto run_function_with_timeout (func_t &&func,
-                Args &&... args) const -> function_result<typename std::result_of<func_t(Args...)>::type> {
+                Args &&... args) const -> function_result<typename std::result_of<func_t (Args...)>::type> {
 
-          using return_type = typename std::result_of<func_t(Args...)>::type;
+          using return_type = typename std::result_of<func_t (Args...)>::type;
 
           auto start = std::chrono::high_resolution_clock::now();
           auto exec = [&func, &args...] () -> return_type {
-            return func(std::forward<Args>(args)...);
+              return func(std::forward<Args>(args)...);
           };
 
-          auto task = std::packaged_task<return_type()>(exec);
+          auto task = std::packaged_task<return_type ()>(exec);
 
           auto handle = task.get_future();
           std::thread th(std::move(task));
@@ -212,7 +150,7 @@ namespace ptest {
 
         template <typename func_t, typename ... Args>
         auto run_function_without_timeout (func_t &&func,
-                Args &&... args) const -> function_result<typename std::result_of<func_t(Args...)>::type> {
+                Args &&... args) const -> function_result<typename std::result_of<func_t (Args...)>::type> {
 
           auto start = std::chrono::high_resolution_clock::now();
           auto result = func(std::forward<Args>(args)...);
@@ -223,7 +161,7 @@ namespace ptest {
         template <typename func_t, typename ... Args>
         auto run_function (bool timeout,
                 func_t &&func,
-                Args &&... args) const -> function_result<typename std::result_of<func_t(Args...)>::type> {
+                Args &&... args) const -> function_result<typename std::result_of<func_t (Args...)>::type> {
 
           return (timeout ? run_function_with_timeout(func, std::forward<Args>(args)...)
                           : run_function_without_timeout(func, std::forward<Args>(args)...));
@@ -250,79 +188,89 @@ namespace ptest {
           _print_thread_safe(out, std::forward<Rest>(rest)...);
         }
 
-        template <typename T>
-        void print_value (std::ostream &out, const T &value) const {
-          print_thread_safe(out, value);
+        template <typename ... Args>
+        void print_thread_safe (const output_type &ot, Args &&... args) const {
+          static std::mutex mtx;
+          std::lock_guard<std::mutex> lock(mtx);
+          _print_thread_safe(config.outputs.at(ot), std::forward<Args>(args)...);
         }
 
-        void print_value (std::ostream &out, const std::string &value) const;
-
-        void print_value (std::ostream &out, const char value) const;
+        // =========================================================================
 
         template <typename T>
-        void print_name_and_value (std::ostream &out, const std::string &name, const T &value) const {
+        void print_value (const output_type &ot, const T &value) const {
+          print_thread_safe(ot, value);
+        }
+
+        void print_value (const output_type &ot, const std::string &value) const;
+
+        void print_value (const output_type &ot, const char value) const;
+
+        template <typename T>
+        void print_name_and_value (const output_type &ot, const std::string &name, const T &value) const {
           try {
             auto res = std::stold(name);
-            print_thread_safe(out, res);
+            print_thread_safe(ot, res);
           } catch (...) {
             if (config.print_names_of_arguments)
-              print_thread_safe(out, name, "=");
+              print_thread_safe(ot, name, "=");
 
-            print_value(out, value);
+            print_value(ot, value);
           }
         }
 
-        void print_name_and_value (std::ostream &out, const std::string &name, const std::string &value) const;
+        void print_name_and_value (const output_type &ot, const std::string &name, const std::string &value) const;
 
-        void print_name_and_value (std::ostream &out, const std::string &name, const char value) const;
+        void print_name_and_value (const output_type &ot, const std::string &name, const char value) const;
 
         template <typename First>
-        void print_args (std::ostream &out,
+        void print_args (const output_type &ot,
                 const std::vector<std::string> args_names,
                 size_t pos,
                 const First &first) const {
-          print_name_and_value(out, args_names.at(pos), first);
+
+          print_name_and_value(ot, args_names.at(pos), first);
         }
 
-        void print_args (std::ostream &out,
+        void print_args (const output_type &ot,
                 const std::vector<std::string> args_names,
                 size_t pos) const;
 
         template <typename First, typename ... Rest>
-        void print_args (std::ostream &out,
+        void print_args (const output_type &ot,
                 const std::vector<std::string> args_names,
                 size_t pos,
                 const First &first,
                 Rest &&... rest) const {
 
-          print_name_and_value(out, args_names.at(pos), first);
-          print_thread_safe(out, ", ");
-          print_args(out, args_names, pos + 1, std::forward<Rest>(rest)...);
+          print_name_and_value(ot, args_names.at(pos), first);
+          print_thread_safe(ot, ", ");
+          print_args(ot, args_names, pos + 1, std::forward<Rest>(rest)...);
         }
 
         template <typename ... Args>
-        void print_test_preamble (std::ostream &out,
+        void print_test_preamble (const output_type &ot,
                 const std::string &func_name,
                 const std::vector<std::string> &args_names,
                 Args &&... args) const {
 
           if (suite_name == "") {
-            print_thread_safe(out, "running test ", func_name, "(");
+            print_thread_safe(ot, "running test ", func_name, "(");
           } else {
-            print_thread_safe(out, suite_name, ": running test ", func_name, "(");
+            print_thread_safe(ot, suite_name, ": running test ", func_name, "(");
           }
-          print_args(out, args_names, 0, std::forward<Args>(args)...);
-          print_thread_safe(out, ")");
+          print_args(ot, args_names, 0, std::forward<Args>(args)...);
+          print_thread_safe(ot, ")");
         }
 
         template <typename ... Args>
-        void print_assertion_preamble (std::ostream &out,
+        void print_assertion_preamble (const output_type &ot,
                 const std::string &assertion_name) const {
 
           if (suite_name == "") {
-            print_thread_safe(out, "running assertion ", assertion_name);
+            print_thread_safe(ot, "running assertion ", assertion_name);
           } else {
-            print_thread_safe(out, suite_name, ": running assertion ", assertion_name);
+            print_thread_safe(ot, suite_name, ": running assertion ", assertion_name);
           }
         }
     };
@@ -336,7 +284,7 @@ namespace ptest {
 #include "new_test_suite_macro.hpp"
 
 #define print_final_test_result() {\
-ptest::ptest_suite::print_general_result();\
+ptest::general_suite.print_general_result();\
 }
 
 #define print_final_suite_result(suite) {\

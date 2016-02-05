@@ -5,74 +5,43 @@
 namespace ptest {
     stats_t ptest_suite::general_stats;
 
+    bool print_to_file = false;
+
+    std::string output_filename;
+
     ptest_suite::ptest_suite (const std::string &suite_name,
-            const config_t &local_config) : config(local_config), suite_name(suite_name) {
+            const config_t &local_config) : config(local_config), suite_name(suite_name) { }
 
-      clear_stats();
-    }
+    // =========================================================================
 
-    void ptest_suite::print_value (std::ostream &out, const std::string &value) const {
-      print_thread_safe(out, "\"", value, "\"");
-    }
+    void ptest_suite::run_assertion (bool expr, const std::string &name, const std::string &msg) {
+      if (expr) {
+        update_stats(function_status::passed);
+        if (config.print_passed_tests) {
+          print_assertion_preamble(output_type::passed , name);
+          print_thread_safe(output_type::passed, "\n\tPASSED\n\n");
+        }
 
-    void ptest_suite::print_value (std::ostream &out, const char value) const {
-      print_thread_safe(out, "\'", value, "\'");
-    }
+      } else {
+        update_stats(function_status::failed);
+        print_assertion_preamble(output_type::failed , name);
+        print_thread_safe(output_type::failed, "\n\tFAILED");
+        if (!msg.empty())
+          print_thread_safe(output_type::failed, ": ", msg);
 
-    void ptest_suite::print_args (std::ostream &out, const std::vector<std::string> args_names, size_t pos) const { }
-
-    void ptest_suite::print_name_and_value (std::ostream &out,
-            const std::string &name,
-            const std::string &value) const {
-      std::string s_name(name.substr(1)), s_value(value);
-      s_value += "\"";
-      s_name.erase(std::remove(s_name.begin(), s_name.end(), '\\'), s_name.end());
-      s_value.erase(std::remove(s_value.begin(), s_value.end(), '\\'), s_value.end());
-      if ((s_name == s_value) || !config.print_names_of_arguments)
-        print_value(out, value);
-      else {
-        print_thread_safe(out, name, "=");
-        print_value(out, value);
+        print_thread_safe(output_type::failed, "\n\n");
+        if (config.terminate_after_first_failure)
+          terminate_process();
       }
     }
 
-    void ptest_suite::print_name_and_value (std::ostream &out, const std::string &name, const char value) const {
-      std::string s_name(name.substr(1)), s_value(1, value);
-      s_value += "\'";
-      s_name.erase(std::remove(s_name.begin(), s_name.end(), '\\'), s_name.end());
-      if ((s_name == s_value) || !config.print_names_of_arguments)
-        print_value(out, value);
-      else {
-        print_thread_safe(out, name, "=");
-        print_value(out, value);
-      }
-    }
-
+    // =========================================================================
 
     void ptest_suite::terminate_process () {
       std::cout << "\nterminating... ";
       std::cout.flush();
       std::cerr.flush();
       exit(0);
-    }
-
-
-    void ptest_suite::print_suite_result () const {
-      print_thread_safe(std::cout, "----- TEST RESULT IN SUITE ", suite_name, ":\n");
-      print_thread_safe(std::cout, "tests passed:         ", stats.passed, '\n');
-      print_thread_safe(std::cout, "tests failed:         ", stats.failed, '\n');
-      print_thread_safe(std::cout, "timeout:              ", stats.timeout, '\n');
-      print_thread_safe(std::cout, "exceptions:           ", stats.exceptions, '\n');
-      print_thread_safe(std::cout, "total execution time: ", stats.total_time.load().count(), " microseconds\n\n");
-    }
-
-    void ptest_suite::print_general_result () {
-      print_thread_safe(std::cout, "----- FINAL TEST RESULT:\n");
-      print_thread_safe(std::cout, "tests passed:         ", general_stats.passed, '\n');
-      print_thread_safe(std::cout, "tests failed:         ", general_stats.failed, '\n');
-      print_thread_safe(std::cout, "timeout:              ", general_stats.timeout, '\n');
-      print_thread_safe(std::cout, "exceptions:           ", general_stats.exceptions, '\n');
-      print_thread_safe(std::cout, "total execution time: ", general_stats.total_time.load().count(), " microseconds\n\n");
     }
 
     void ptest_suite::update_stats (const ptest_suite::function_status &status,
@@ -101,35 +70,68 @@ namespace ptest {
       }
     }
 
-    ptest_suite general_suite("");
+    void set_output_file (const std::string &filename) {
+      output_filename = filename;
+      print_to_file = true;
+    }
 
-    void ptest_suite::run_assertion (bool expr, const std::string &name, const std::string &msg) {
-      if (expr) {
-        update_stats(function_status::passed);
-        if (config.print_passed_tests) {
-          print_assertion_preamble(std::cout, name);
-          print_thread_safe(std::cout, "\n\tPASSED\n\n");
-        }
+    // =========================================================================
 
-      } else {
-        update_stats(function_status::failed);
-        std::ostream &out = config.use_cerr_to_error ? std::cerr : std::cout;
-        print_assertion_preamble(out, name);
-        print_thread_safe(out, "\n\tFAILED");
-        if (!msg.empty())
-          print_thread_safe(out, ": ", msg);
+    void ptest_suite::print_suite_result () const {
+      print_thread_safe(output_type::info , "----- TEST RESULT IN SUITE ", suite_name, ":\n");
+      print_thread_safe(output_type::info, "tests passed:         ", stats.passed, '\n');
+      print_thread_safe(output_type::info, "tests failed:         ", stats.failed, '\n');
+      print_thread_safe(output_type::info, "timeout:              ", stats.timeout, '\n');
+      print_thread_safe(output_type::info, "exceptions:           ", stats.exceptions, '\n');
+      print_thread_safe(output_type::info, "total execution time: ", stats.total_time.load().count(), " microseconds\n\n");
+    }
 
-        print_thread_safe(out, "\n\n");
-        if (config.terminate_after_first_failure)
-          terminate_process();
+    void ptest_suite::print_general_result () const {
+      print_thread_safe(output_type::info, "----- FINAL TEST RESULT:\n");
+      print_thread_safe(output_type::info, "tests passed:         ", general_stats.passed, '\n');
+      print_thread_safe(output_type::info, "tests failed:         ", general_stats.failed, '\n');
+      print_thread_safe(output_type::info, "timeout:              ", general_stats.timeout, '\n');
+      print_thread_safe(output_type::info, "exceptions:           ", general_stats.exceptions, '\n');
+      print_thread_safe(output_type::info, "total execution time: ", general_stats.total_time.load().count(), " microseconds\n\n");
+    }
+
+    void ptest_suite::print_value (const output_type &ot, const std::string &value) const {
+      print_thread_safe(ot, "\"", value, "\"");
+    }
+
+    void ptest_suite::print_value (const output_type &ot, const char value) const {
+      print_thread_safe(ot, "\'", value, "\'");
+    }
+
+    void ptest_suite::print_args (const output_type &ot, const std::vector<std::string> args_names, size_t pos) const { }
+
+    void ptest_suite::print_name_and_value (const output_type &ot,
+            const std::string &name,
+            const std::string &value) const {
+
+      std::string s_name(name.substr(1)), s_value(value);
+      s_value += "\"";
+      s_name.erase(std::remove(s_name.begin(), s_name.end(), '\\'), s_name.end());
+      s_value.erase(std::remove(s_value.begin(), s_value.end(), '\\'), s_value.end());
+      if ((s_name == s_value) || !config.print_names_of_arguments)
+        print_value(ot, value);
+      else {
+        print_thread_safe(ot, name, "=");
+        print_value(ot, value);
       }
     }
 
-    void ptest_suite::clear_stats () {
-      stats.exceptions = 0;
-      stats.failed = 0;
-      stats.passed = 0;
-      stats.timeout = 0;
-      stats.total_time = std::chrono::microseconds::zero();
+    void ptest_suite::print_name_and_value (const output_type &ot, const std::string &name, const char value) const {
+      std::string s_name(name.substr(1)), s_value(1, value);
+      s_value += "\'";
+      s_name.erase(std::remove(s_name.begin(), s_name.end(), '\\'), s_name.end());
+      if ((s_name == s_value) || !config.print_names_of_arguments)
+        print_value(ot, value);
+      else {
+        print_thread_safe(ot, name, "=");
+        print_value(ot, value);
+      }
     }
+
+    ptest_suite general_suite("");
 }
