@@ -129,7 +129,7 @@ namespace ptest {
           using return_type = typename std::result_of<func_t (Args...)>::type;
 
           auto start = std::chrono::high_resolution_clock::now();
-          auto exec = [&func, &args...] () -> return_type {
+          auto exec = [func, args...] () mutable -> return_type {
               return func(std::forward<Args>(args)...);
           };
 
@@ -143,7 +143,7 @@ namespace ptest {
             throw timeout_exception();
           } else {
             auto end = std::chrono::high_resolution_clock::now();
-            th.detach();
+            th.detach(); // yea, nice UB here ;))
             return {handle.get(), std::chrono::duration_cast<std::chrono::microseconds>(end - start)};
           }
         }

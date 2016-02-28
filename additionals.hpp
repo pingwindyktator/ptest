@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include <thread>
-#include <list>
+#include <vector>
 
 namespace ptest {
     class timeout_exception : public std::exception {
@@ -20,9 +20,11 @@ namespace ptest {
 
     template <typename func_t, typename ... Args>
     void call_test (size_t threads_number, func_t &&func, Args &&... args) {
-      std::list<std::thread> threads;
+      std::vector<std::thread> threads;
+      threads.reserve(threads_number);
+
       for (size_t i = 0; i < threads_number; ++i)
-        threads.emplace_back(std::thread(func, std::forward<Args>(args)...));
+        threads.emplace_back(func, std::forward<Args>(args)...);
 
       for (auto &t : threads)
         t.join();
