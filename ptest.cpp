@@ -94,7 +94,7 @@ namespace ptest {
       print_thread_safe(ot, "\'", value, "\'");
     }
 
-    void ptest_suite::print_args (const output_type &ot, const std::vector<std::string> args_names, size_t pos) const { }
+    void ptest_suite::print_args (const output_type &, const std::vector<std::string> &, size_t) const { }
 
     void ptest_suite::print_name_and_value (const output_type &ot,
             const std::string &name,

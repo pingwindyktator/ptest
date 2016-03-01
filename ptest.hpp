@@ -31,7 +31,7 @@ namespace ptest {
         template <typename func_t, typename T, typename ... Args>
         void start_test (func_t &&function,
                 const std::string &func_name,
-                const T &expected_result,
+                T &&expected_result,
                 bool equality,
                 std::vector<std::string> &&args_names,
                 Args &&... args) const {
@@ -177,13 +177,13 @@ namespace ptest {
         // =========================================================================
 
         template <typename First>
-        static void _print_thread_safe (std::ostream &out, const First &value) {
+        static void _print_thread_safe (std::ostream &out, First &&value) {
           out << value;
           out.flush();
         }
 
         template <typename First, typename ... Rest>
-        static void _print_thread_safe (std::ostream &out, const First &value, Rest &&... rest) {
+        static void _print_thread_safe (std::ostream &out, First &&value, Rest &&... rest) {
           out << value;
           _print_thread_safe(out, std::forward<Rest>(rest)...);
         }
@@ -198,16 +198,16 @@ namespace ptest {
         // =========================================================================
 
         template <typename T>
-        void print_value (const output_type &ot, const T &value) const {
+        void print_value (const output_type &ot, T &&value) const {
           print_thread_safe(ot, value);
         }
 
         void print_value (const output_type &ot, const std::string &value) const;
 
-        void print_value (const output_type &ot, const char value) const;
+        void print_value (const output_type &ot, char value) const;
 
         template <typename T>
-        void print_name_and_value (const output_type &ot, const std::string &name, const T &value) const {
+        void print_name_and_value (const output_type &ot, const std::string &name, T &&value) const {
           try {
             auto res = std::stold(name);
             print_thread_safe(ot, res);
@@ -225,22 +225,22 @@ namespace ptest {
 
         template <typename First>
         void print_args (const output_type &ot,
-                const std::vector<std::string> args_names,
+                const std::vector<std::string> &args_names,
                 size_t pos,
-                const First &first) const {
+                First &&first) const {
 
           print_name_and_value(ot, args_names.at(pos), first);
         }
 
         void print_args (const output_type &ot,
-                const std::vector<std::string> args_names,
+                const std::vector<std::string> &args_names,
                 size_t pos) const;
 
         template <typename First, typename ... Rest>
         void print_args (const output_type &ot,
-                const std::vector<std::string> args_names,
+                const std::vector<std::string> &args_names,
                 size_t pos,
-                const First &first,
+                First &&first,
                 Rest &&... rest) const {
 
           print_name_and_value(ot, args_names.at(pos), first);
