@@ -96,7 +96,7 @@ namespace ptest {
 					}
 				}
 
-				bool p__start_assertion_ (bool expr, const std::string &name, const std::string &msg = "");
+				bool p__start_assertion_ (bool expr, std::string &&name, const std::string &msg = "");
 
 				// =========================================================================
 
@@ -286,7 +286,7 @@ void p__start_test_ (func_t &&function,
 	                                       std::forward<Args>(args)...);
 };
 
-bool p__start_assertion_ (bool, const std::string &, const std::string & = "");
+bool p__start_assertion_ (bool, std::string &&, const std::string & = "");
 
 #include "macros.hpp"
 
