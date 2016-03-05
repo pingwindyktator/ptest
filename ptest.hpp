@@ -24,7 +24,7 @@ namespace ptest {
 				static stats_t general_stats;
 				config_t config;
 
-				ptest_suite (const std::string &suite_name, const config_t &local_config = config_t());
+				ptest_suite (const std::string &, const config_t & = config_t());
 
 				// =========================================================================
 
@@ -96,7 +96,7 @@ namespace ptest {
 					}
 				}
 
-				bool p__start_assertion_ (bool expr, std::string &&name, const std::string &msg = "");
+				bool p__start_assertion_ (bool expr, std::string &&, const std::string & = "");
 
 				// =========================================================================
 
@@ -129,8 +129,8 @@ namespace ptest {
 					using return_type = typename std::result_of<func_t (Args...)>::type;
 
 					auto start = std::chrono::high_resolution_clock::now();
-					auto exec = [func, args...] () mutable -> return_type {
-							return func(std::forward<Args>(args)...);
+					auto exec = [f = std::move(func), args...] () mutable -> return_type {
+							return f(std::forward<Args>(args)...);
 					};
 
 					auto task = std::packaged_task<return_type ()>(exec);
@@ -204,7 +204,9 @@ namespace ptest {
 
 				void print_value (const output_type &ot, const std::string &value) const;
 
-				void print_value (const output_type &ot, char value) const;
+				void print_value (const output_type &, const char *) const;
+
+				void print_value (const output_type &, char) const;
 
 				template <typename T>
 				void print_name_and_value (const output_type &ot, const std::string &name, T &&value) const {
@@ -219,9 +221,9 @@ namespace ptest {
 					}
 				}
 
-				void print_name_and_value (const output_type &ot, const std::string &name, const std::string &value) const;
+				void print_name_and_value (const output_type &, const std::string &, const char) const;
 
-				void print_name_and_value (const output_type &ot, const std::string &name, const char value) const;
+				void print_name_and_value (const output_type &, const std::string &, const char *) const;
 
 				template <typename First>
 				void print_args (const output_type &ot,
@@ -232,9 +234,9 @@ namespace ptest {
 					print_name_and_value(ot, args_names.at(pos), first);
 				}
 
-				void print_args (const output_type &ot,
-								const std::vector<std::string> &args_names,
-								size_t pos) const;
+				void print_args (const output_type &,
+								const std::vector<std::string> &,
+								size_t) const;
 
 				template <typename First, typename ... Rest>
 				void print_args (const output_type &ot,
@@ -243,7 +245,7 @@ namespace ptest {
 								First &&first,
 								Rest &&... rest) const {
 
-					print_name_and_value(ot, args_names.at(pos), first);
+					print_name_and_value(ot, args_names.at(pos), std::forward<First>(first));
 					print_thread_safe(ot, ", ");
 					print_args(ot, args_names, pos + 1, std::forward<Rest>(rest)...);
 				}
@@ -282,9 +284,9 @@ void p__start_test_ (func_t &&function,
 
 	return ptest::general_suite.p__start_test_(std::forward<func_t>(function),
 	                                       func_name, std::forward<T>(expected_result),
-	                                       equality, args_names,
+	                                       equality, std::move(args_names),
 	                                       std::forward<Args>(args)...);
-};
+}
 
 bool p__start_assertion_ (bool, std::string &&, const std::string & = "");
 

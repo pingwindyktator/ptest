@@ -70,7 +70,7 @@ namespace ptest {
 
 		// =========================================================================
 
-		void ptest_suite::print_suite_result () const {
+		void ptest_suite::print_suite_result () const { // TODO redundant code
 			print_thread_safe(output_type::info, "----- TEST RESULT IN SUITE ", suite_name, ":\n");
 			print_thread_safe(output_type::info, "tests passed:         ", stats.passed, '\n');
 			print_thread_safe(output_type::info, "tests failed:         ", stats.failed, '\n');
@@ -79,7 +79,7 @@ namespace ptest {
 			print_thread_safe(output_type::info, "total execution time: ", stats.total_time.load().count(), " microseconds\n\n");
 		}
 
-		void ptest_suite::print_general_result () const {
+		void ptest_suite::print_general_result () const { // TODO redundant code
 			print_thread_safe(output_type::info, "----- FINAL TEST RESULT:\n");
 			print_thread_safe(output_type::info, "tests passed:         ", general_stats.passed, '\n');
 			print_thread_safe(output_type::info, "tests failed:         ", general_stats.failed, '\n');
@@ -92,6 +92,10 @@ namespace ptest {
 			print_thread_safe(ot, "\"", value, "\"");
 		}
 
+		void ptest_suite::print_value (const output_type &ot, const char *value) const {
+			print_thread_safe(ot, "\"", value, "\"");
+		}
+
 		void ptest_suite::print_value (const output_type &ot, const char value) const {
 			print_thread_safe(ot, "\'", value, "\'");
 		}
@@ -100,7 +104,7 @@ namespace ptest {
 
 		void ptest_suite::print_name_and_value (const output_type &ot,
 						const std::string &name,
-						const std::string &value) const {
+						const char *value) const {
 
 			std::string s_name(name.substr(1)), s_value(value);
 			s_value += "\"";
@@ -115,9 +119,7 @@ namespace ptest {
 		}
 
 		void ptest_suite::print_name_and_value (const output_type &ot, const std::string &name, const char value) const {
-			std::string s_name(name.substr(1)), s_value(1, value);
-			s_value += "\'";
-			s_name.erase(std::remove(s_name.begin(), s_name.end(), '\\'), s_name.end());
+			std::string s_name(name.substr(1, 1)), s_value(1, value);
 			if ((s_name == s_value) || !config.print_names_of_arguments)
 				print_value(ot, value);
 			else {
