@@ -29,7 +29,7 @@ namespace ptest {
 				// =========================================================================
 
 				template <typename func_t, typename T, typename ... Args>
-				void start_test (func_t &&function,
+				void p__start_test_ (func_t &&function,
 								const std::string &func_name,
 								T &&expected_result,
 								bool equality,
@@ -96,7 +96,7 @@ namespace ptest {
 					}
 				}
 
-				void run_assertion (bool expr, const std::string &name, const std::string &msg = "");
+				bool p__start_assertion_ (bool expr, const std::string &name, const std::string &msg = "");
 
 				// =========================================================================
 
@@ -272,14 +272,24 @@ namespace ptest {
 		extern ptest_suite general_suite;
 }
 
+template <typename func_t, typename T, typename ... Args>
+void p__start_test_ (func_t &&function,
+				const std::string &func_name,
+				T &&expected_result,
+				bool equality,
+				std::vector<std::string> &&args_names,
+				Args &&... args) {
+
+	return ptest::general_suite.p__start_test_(std::forward<func_t>(function),
+	                                       func_name, std::forward<T>(expected_result),
+	                                       equality, args_names,
+	                                       std::forward<Args>(args)...);
+};
+
+bool p__start_assertion_ (bool, const std::string &, const std::string & = "");
+
 #include "macros.hpp"
 
-#define print_final_test_result() {\
-ptest::general_suite.print_general_result();\
-}
-
-#define print_final_suite_result(suite) {\
-suite.print_suite_result();\
-}
+void print_final_result ();
 
 #endif //PLIB_PTEST_HPP

@@ -10,7 +10,7 @@ namespace ptest {
 
 		// =========================================================================
 
-		void ptest_suite::run_assertion (bool expr, const std::string &name, const std::string &msg) {
+		bool ptest_suite::p__start_assertion_ (bool expr, const std::string &name, const std::string &msg) {
 			if (expr) {
 				update_stats(function_status::passed);
 				if (config.print_passed_tests) {
@@ -29,6 +29,8 @@ namespace ptest {
 				if (config.terminate_after_first_failure)
 					terminate_process();
 			}
+
+			return expr;
 		}
 
 		// =========================================================================
@@ -140,3 +142,9 @@ namespace ptest {
 
 		ptest_suite general_suite("");
 }
+
+bool p__start_assertion_ (bool expr, const std::string &name, const std::string &msg) {
+	return ptest::general_suite.p__start_assertion_(expr, name, msg);
+}
+
+void print_final_result () { ptest::general_suite.print_general_result(); }
