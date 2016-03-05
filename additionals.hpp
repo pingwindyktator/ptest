@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include <sstream>
 
 namespace ptest {
 		class timeout_exception : public std::exception {

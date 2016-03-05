@@ -28,13 +28,13 @@
 *.app
 
 # Other mess
-.idea/*
+*/.idea/*
 *~
 
 # Cmake files
 *.cmake
 *Makefile*
-CMakeFiles/*
-CMakeCache*
+*CMakeFiles/*
+*/CMakeCache*
 ptest
 TODO

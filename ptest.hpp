@@ -11,6 +11,7 @@
 #include <atomic>
 #include <list>
 #include <fstream>
+#include <cassert>
 #include <unordered_map>
 #include "prettyprint/pretty_print.hpp"
 #include "stats.hpp"
@@ -103,6 +104,24 @@ namespace ptest {
 				void print_suite_result () const;
 
 				void print_general_result () const;
+
+				// =========================================================================
+
+				template <typename func_t, typename T, typename ... Args>
+				void run_equal_test (func_t &&function, // to shut up IDE and make it more willing to cooperate
+								Args &&... args,
+								T &&expected_result) const {
+
+					assert(false); // hey, it should not be called...
+				}
+
+				template <typename func_t, typename T, typename ... Args>
+				void run_unequal_test (func_t &&function,
+								Args &&... args,
+								T &&expected_result) const {
+
+					assert(false);
+				}
 
 		private:
 				template <typename T>
