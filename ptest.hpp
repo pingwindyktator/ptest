@@ -108,17 +108,17 @@ namespace ptest {
 				// =========================================================================
 
 				template <typename func_t, typename T, typename ... Args>
-				void run_equal_test (func_t &&function, // to shut up IDE and make it more willing to cooperate
-								Args &&... args,
-								T &&expected_result) const {
+				void run_equal_test (func_t &&, // to shut up IDE and make it more willing to cooperate
+								Args &&...,
+								T &&) const {
 
 					assert(false); // hey, it should not be called...
 				}
 
 				template <typename func_t, typename T, typename ... Args>
-				void run_unequal_test (func_t &&function,
-								Args &&... args,
-								T &&expected_result) const {
+				void run_unequal_test (func_t &&,
+								Args &&...,
+								T &&) const {
 
 					assert(false);
 				}
