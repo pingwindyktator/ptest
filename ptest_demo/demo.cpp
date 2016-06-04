@@ -27,6 +27,8 @@ int get_string_and_cstring (const char *, const std::string &) { return 42; }
 
 int get_timeout () { std::this_thread::sleep_for(4s); return 42; }
 
+int get_timeout2() { std::this_thread::sleep_for(1ms); return 42; }
+
 int get_std_exception () { throw std::runtime_error("hello"); }
 
 int get_dumb_exception () { throw "I'm dumb!"; }
@@ -76,6 +78,7 @@ void timeout_demo () {
 	// TODO there is no config.print_timeout
 
 	timeout_demo_suite.run_equal_test(get_timeout, 42); // running get_timeout() with expecting result 42 and timeout set to 10ms
+	timeout_demo_suite.run_equal_test(get_timeout2, 43);
 }
 
 void main_demo () {
@@ -165,12 +168,12 @@ void call_test_demo () {
 
 int main () {
 	timeout_demo();
-	exception_demo();
-	main_demo();
-	suite_demo();
-	thread_demo();
-	assert_demo();
-	call_test_demo();
+//	exception_demo();
+//	main_demo();
+//	suite_demo();
+//	thread_demo();
+//	assert_demo();
+//	call_test_demo();
 
 	print_final_result();
 	return 0;
