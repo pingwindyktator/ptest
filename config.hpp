@@ -20,8 +20,11 @@ namespace ptest {
 		};
 
 		struct config_t {
-				std::unordered_map<output_type, std::reference_wrapper<std::ostream>, hash> outputs;
+		private:
 				std::chrono::microseconds max_time;
+
+		public:
+				std::unordered_map<output_type, std::reference_wrapper<std::ostream>, hash> outputs;
 				bool is_timeout_active = false;
 
 				bool print_passed_tests = false;
@@ -32,6 +35,8 @@ namespace ptest {
 				bool terminate_after_first_failure = false;
 				bool terminate_after_first_exception = false;
 				bool terminate_after_first_timeout = false;
+
+				bool collapse_lambda_functions = true;
 
 				config_t ();
 
@@ -47,6 +52,8 @@ namespace ptest {
 					max_time = max;
 					is_timeout_active = true;
 				}
+
+				auto get_max_time () const { return max_time; }
 		};
 }
 

@@ -25,24 +25,26 @@ namespace ptest {
 				static stats_t general_stats;
 				config_t config;
 
-				ptest_suite (const std::string &, const config_t & = config_t());
+				ptest_suite (const std::string &, const config_t & = config_t{});
 
 				// =========================================================================
 
 				template <typename func_t, typename T, typename ... Args>
-				void p__start_test_ (func_t &&function,
-								const std::string &func_name,
+				void p__start_test_ (func_t function,
+								std::string func_name,
 								T &&expected_result,
 								bool equality,
-								std::vector<std::string> &&args_names,
+								const std::vector<std::string> &args_names,
 								Args &&... args) const {
+
+					func_name = collapse_if_lambda(func_name);
 
 					using return_type = typename std::result_of<func_t (Args...)>::type;
 					// VOODOO MAGIC, DO NOT TOUCH
 					static const std::string voodoo[2][5] = {{"  ", "\n", "!(", ")\n", "  "},
 					                                         {"",   "\n", "",   "\n",  ""}};
 
-					function_result <return_type> result;
+					function_result <return_type> result {};
 
 					try {
 						result = run_function(config.is_timeout_active, function, std::forward<Args>(args)...);
@@ -97,7 +99,7 @@ namespace ptest {
 					}
 				}
 
-				bool p__start_assertion_ (bool expr, std::string &&, const std::string & = "");
+				bool p__start_assertion_ (bool expr, const std::string &, const std::string & = "");
 
 				// =========================================================================
 
@@ -108,7 +110,7 @@ namespace ptest {
 				// =========================================================================
 
 				template <typename func_t, typename T, typename ... Args>
-				void run_equal_test (func_t &&, // to shut up IDE and make it more willing to cooperate
+				void run_equal_test (func_t, // to shut up IDE and make it more willing to cooperate
 								Args &&...,
 								T &&) const {
 
@@ -116,7 +118,7 @@ namespace ptest {
 				}
 
 				template <typename func_t, typename T, typename ... Args>
-				void run_unequal_test (func_t &&,
+				void run_unequal_test (func_t,
 								Args &&...,
 								T &&) const {
 
@@ -142,8 +144,8 @@ namespace ptest {
 				// =========================================================================
 
 				template <typename func_t, typename ... Args>
-				auto run_function_with_timeout (func_t &&func,
-								Args &&... args) const -> function_result<typename std::result_of<func_t (Args...)>::type> {
+				auto run_function_with_timeout (func_t func,
+								Args &&... args) const {
 
 					using return_type = typename std::result_of<func_t (Args...)>::type;
 
@@ -157,30 +159,32 @@ namespace ptest {
 					auto handle = task.get_future();
 					std::thread th(std::move(task));
 
-					if (handle.wait_for(config.max_time + std::chrono::milliseconds(10)) == std::future_status::timeout) {
+					if (handle.wait_for(config.get_max_time() + std::chrono::milliseconds(10)) == std::future_status::timeout) {
 						th.detach();
 						throw timeout_exception();
 					} else {
 						auto end = std::chrono::high_resolution_clock::now();
 						th.detach(); // yea, nice UB here ;))
-						return {handle.get(), std::chrono::duration_cast<std::chrono::microseconds>(end - start)};
+						return function_result<return_type> {handle.get(), std::chrono::duration_cast<std::chrono::microseconds>(end - start)};
 					}
 				}
 
 				template <typename func_t, typename ... Args>
-				auto run_function_without_timeout (func_t &&func,
-								Args &&... args) const -> function_result<typename std::result_of<func_t (Args...)>::type> {
+				auto run_function_without_timeout (func_t func,
+								Args &&... args) const {
+
+					using return_type = typename std::result_of<func_t (Args...)>::type;
 
 					auto start = std::chrono::high_resolution_clock::now();
 					auto result = func(std::forward<Args>(args)...);
 					auto end = std::chrono::high_resolution_clock::now();
-					return {result, std::chrono::duration_cast<std::chrono::microseconds>(end - start)};
+					return function_result<return_type> {result, std::chrono::duration_cast<std::chrono::microseconds>(end - start)};
 				}
 
 				template <typename func_t, typename ... Args>
 				auto run_function (bool timeout,
-								func_t &&func,
-								Args &&... args) const -> function_result<typename std::result_of<func_t (Args...)>::type> {
+								func_t func,
+								Args &&... args) const {
 
 					return (timeout ? run_function_with_timeout(func, std::forward<Args>(args)...)
 					                : run_function_without_timeout(func, std::forward<Args>(args)...));
@@ -244,6 +248,8 @@ namespace ptest {
 
 				void print_name_and_value (const output_type &, const std::string &, const char *) const;
 
+				std::string collapse_if_lambda (const std::string &) const;
+
 				template <typename First>
 				void print_args (const output_type &ot,
 								const std::vector<std::string> &args_names,
@@ -291,23 +297,23 @@ namespace ptest {
 		};
 
 		extern ptest_suite general_suite;
-}
+} // namespace ptest
 
 template <typename func_t, typename T, typename ... Args>
-void p__start_test_ (func_t &&function,
+void p__start_test_ (func_t function,
 				const std::string &func_name,
 				T &&expected_result,
 				bool equality,
-				std::vector<std::string> &&args_names,
+				const std::vector<std::string> &args_names,
 				Args &&... args) {
 
-	return ptest::general_suite.p__start_test_(std::forward<func_t>(function),
+	return ptest::general_suite.p__start_test_(function,
 	                                       func_name, std::forward<T>(expected_result),
-	                                       equality, std::move(args_names),
+	                                       equality, args_names,
 	                                       std::forward<Args>(args)...);
 }
 
-bool p__start_assertion_ (bool, std::string &&, const std::string & = "");
+bool p__start_assertion_ (bool, const std::string &, const std::string & = "");
 
 #include "macros.hpp"
 

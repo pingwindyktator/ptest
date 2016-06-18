@@ -33,6 +33,11 @@ int get_std_exception () { throw std::runtime_error("hello"); }
 
 int get_dumb_exception () { throw "I'm dumb!"; }
 
+int without_args () { return 55; }
+
+template <typename T>
+T give_me_some_default_value () { return T{}; }
+
 // -------------------------------------------------------
 
 struct some_struct { };
@@ -120,7 +125,6 @@ void suite_demo () {
 	new_test_suite(some_suite); // variable name will be "some_suite" and suite name will be the same
 	new_test_suite(other_suite, "I'm other suite"); // // variable name will be "other_suite" and suite name will be "I'm other suite"
 	some_suite.config.print_passed_tests = true;
-	other_suite.config.print_passed_tests = true;
 
 	int a = 4;
 	some_suite.run_equal_test(give, a, 4); // running give(a) in suite some_suite with expected result 4
@@ -166,14 +170,22 @@ void call_test_demo () {
 	ptest::call_test(2, some_other_func, 3, 3); // calling some_other_func(3,3) at 2 threads
 }
 
+void some_i_dont_know_demo () {
+	ptest::general_suite.config.print_passed_tests = true;
+	run_equal_test([](auto) { return 'c'; }, some_struct{}, 'c');
+	run_equal_test(without_args, 55);
+	run_equal_test(give_me_some_default_value<int>, 5); // works with templates too
+}
+
 int main () {
 	timeout_demo();
-//	exception_demo();
-//	main_demo();
-//	suite_demo();
-//	thread_demo();
-//	assert_demo();
-//	call_test_demo();
+	exception_demo();
+	main_demo();
+	suite_demo();
+	thread_demo();
+	assert_demo();
+	call_test_demo();
+	some_i_dont_know_demo();
 
 	print_final_result();
 	return 0;

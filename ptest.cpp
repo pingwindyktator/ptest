@@ -6,11 +6,11 @@ namespace ptest {
 		stats_t ptest_suite::general_stats;
 
 		ptest_suite::ptest_suite (const std::string &suite_name,
-						const config_t &local_config) : config(local_config), suite_name(suite_name) { }
+						const config_t &local_config) : stats{}, config(local_config), suite_name(suite_name) { }
 
 		// =========================================================================
 
-		bool ptest_suite::p__start_assertion_ (bool expr, std::string &&name, const std::string &msg) {
+		bool ptest_suite::p__start_assertion_ (bool expr, const std::string &name, const std::string &msg) {
 			if (expr) {
 				update_stats(function_status::passed);
 				if (config.print_passed_tests) {
@@ -142,11 +142,37 @@ namespace ptest {
 			}
 		}
 
+		std::string ptest_suite::collapse_if_lambda (const std::string &func_name) const {
+			// []{} && no regular function name can start with [
+			if (func_name.size() < 4 || func_name.at(0) != '[' ||
+			    !config.collapse_lambda_functions)
+
+				return func_name;
+
+
+			char closing_bracket = '}';
+			char opening_bracket = '{';
+			size_t counter = 0;
+
+			for (size_t i = func_name.find_last_of(closing_bracket); i < func_name.size(); --i) {
+				if (func_name[i] == closing_bracket)
+					++counter;
+
+				else if (func_name[i] == opening_bracket)
+					--counter;
+
+				if (counter == 0)
+					return func_name.substr(0, i);
+			}
+
+			return func_name;
+		}
+
 		ptest_suite general_suite("");
 }
 
-bool p__start_assertion_ (bool expr, std::string &&name, const std::string &msg) {
-	return ptest::general_suite.p__start_assertion_(expr, std::move(name), msg);
+bool p__start_assertion_ (bool expr, const std::string &name, const std::string &msg) {
+	return ptest::general_suite.p__start_assertion_(expr, name, msg);
 }
 
 void print_final_result () { ptest::general_suite.print_general_result(); }
